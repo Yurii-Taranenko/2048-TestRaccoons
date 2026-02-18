@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+/// <summary>
+/// Manages scene loading based on game state changes.
+/// Caches state-to-scene mappings for optimal performance.
+/// </summary>
 public class SceneManagerCustom : BaseManager
 {
     [System.Serializable]
@@ -13,10 +17,25 @@ public class SceneManagerCustom : BaseManager
     }
 
     [SerializeField] private List<SceneMapping> sceneMappings;
+    private Dictionary<GameState, string> _sceneCache;
 
     public override void Init()
     {
+        InitializeSceneCache();
         EventBus.Subscribe<GameStateChangedEvent>(OnGameStateChanged);
+    }
+
+    private void InitializeSceneCache()
+    {
+        _sceneCache = new Dictionary<GameState, string>();
+        if (sceneMappings != null)
+        {
+            foreach (var mapping in sceneMappings)
+            {
+                if (!string.IsNullOrEmpty(mapping.sceneName))
+                    _sceneCache[mapping.state] = mapping.sceneName;
+            }
+        }
     }
 
     private void OnDestroy()
@@ -33,22 +52,25 @@ public class SceneManagerCustom : BaseManager
         }
     }
 
+    /// <summary>
+    /// Retrieves scene name for a given game state using cached dictionary.
+    /// O(1) lookup instead of O(n) iteration.
+    /// </summary>
     private string GetSceneNameForState(GameState state)
     {
-        foreach (var mapping in sceneMappings)
-        {
-            if (mapping.state == state)
-                return mapping.sceneName;
-        }
+        if (_sceneCache.TryGetValue(state, out var sceneName))
+            return sceneName;
+
+        Debug.LogWarning($"[SceneManagerCustom] No scene mapping found for state: {state}");
         return null;
     }
 
+    /// <summary>
+    /// Reloads the currently active scene.
+    /// </summary>
     internal void RestartScene()
     {
         Scene activeScene = SceneManager.GetActiveScene();
-
         SceneManager.LoadScene(activeScene.name);
-
-
     }
 }

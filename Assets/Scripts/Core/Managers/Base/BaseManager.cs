@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class BaseManager : MonoBehaviour
+public abstract class BaseManager : MonoBehaviour, IManager
 {
     public virtual void Init() { }
 }
