@@ -1,11 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// Bootstrap coordinator that initializes all game managers and systems.
-/// Validates configuration before startup and injects dependencies.
-/// For production, we can use a DI-container framework or service locator pattern. But for this simple project, i will just manually inject dependencies (but only once on start).
-/// </summary>
 public class GameBootstrap : MonoBehaviour
 {
     [SerializeField] private List<BaseManager> _managers;
@@ -29,57 +24,45 @@ public class GameBootstrap : MonoBehaviour
         GameModel gameModel = new GameModel();
         _gamePresenter.Init(_managers, gameModel);
 
-        Debug.Log("[GameBootstrap] Game initialized successfully");
+        Debug.Log("[GameBootstrap] Game ready");
     }
 
-    /// <summary>
-    /// Validates that all required dependencies are assigned.
-    /// Prevents runtime errors by catching configuration issues early.
-    /// </summary>
     private bool ValidateSetup()
     {
         bool isValid = true;
 
         if (_managers == null || _managers.Count == 0)
         {
-            Debug.LogError("[GameBootstrap] CRITICAL: Managers list is empty!");
+            Debug.LogError("[GameBootstrap] Managers list empty");
             isValid = false;
         }
 
         if (_gamePresenter == null)
         {
-            Debug.LogError("[GameBootstrap] CRITICAL: GamePresenter is not assigned!");
+            Debug.LogError("[GameBootstrap] GamePresenter not assigned");
             isValid = false;
         }
 
         return isValid;
     }
 
-    /// <summary>
-    /// Loads configuration files from Resources.
-    /// Falls back to Resources.Load if configs are not assigned in Inspector.
-    /// </summary>
     private void LoadConfigs()
     {
         if (_windowConfig == null)
         {
             _windowConfig = ConfigManager.LoadConfig<WindowConfig>("WindowConfig");
             if (_windowConfig == null)
-                Debug.LogError("[GameBootstrap] WindowConfig not found in Assets/Resources/Configs/!");
+                Debug.LogError("[GameBootstrap] WindowConfig not found");
         }
 
         if (_gameplayConfig == null)
         {
             _gameplayConfig = ConfigManager.LoadConfig<GameplayConfig>("GameplayConfig");
             if (_gameplayConfig == null)
-                Debug.LogError("[GameBootstrap] GameplayConfig not found in Assets/Resources/Configs/!");
+                Debug.LogError("[GameBootstrap] GameplayConfig not found");
         }
     }
 
-    /// <summary>
-    /// Injects configuration into respective managers.
-    /// Uses type checking to route configs to appropriate systems.
-    /// </summary>
     private void InjectConfigs()
     {
         foreach (var manager in _managers)
@@ -88,6 +71,14 @@ public class GameBootstrap : MonoBehaviour
                 windowManager.SetConfig(_windowConfig);
             else if (manager is GameplayManager gameplayManager && _gameplayConfig != null)
                 gameplayManager.SetConfig(_gameplayConfig);
+            else if (manager is CubeManager cubeManager && _gameplayConfig != null)
+            {
+                cubeManager.SetConfig(_gameplayConfig);
+                
+                var colorConfig = ConfigManager.LoadConfig<CubeColorConfig>("CubeColorConfig");
+                if (colorConfig != null)
+                    cubeManager.SetColorConfig(colorConfig);
+            }
         }
     }
 }

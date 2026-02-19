@@ -2,23 +2,15 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// Global event bus for decoupled communication between systems.
-/// Supports publish-subscribe pattern with type-safe event handling.
-/// </summary>
 public class EventBus
 {
     private static readonly Dictionary<Type, List<Delegate>> _subscribers = new();
 
-    /// <summary>
-    /// Subscribes a callback to receive events of type T.
-    /// Prevents duplicate subscriptions for the same callback.
-    /// </summary>
     public static void Subscribe<T>(Action<T> callback)
     {
         if (callback == null)
         {
-            Debug.LogWarning($"[EventBus] Cannot subscribe null callback for event {typeof(T).Name}");
+            Debug.LogWarning($"[EventBus] Null callback for {typeof(T).Name}");
             return;
         }
 
@@ -26,19 +18,15 @@ public class EventBus
         if (!_subscribers.ContainsKey(type))
             _subscribers[type] = new List<Delegate>();
 
-        // Prevent duplicate subscriptions
         if (_subscribers[type].Contains(callback))
         {
-            Debug.LogWarning($"[EventBus] Callback already subscribed to {type.Name}");
+            Debug.LogWarning($"[EventBus] Already subscribed to {type.Name}");
             return;
         }
 
         _subscribers[type].Add(callback);
     }
 
-    /// <summary>
-    /// Unsubscribes a callback from receiving events of type T.
-    /// </summary>
     public static void Unsubscribe<T>(Action<T> callback)
     {
         if (callback == null)
@@ -46,27 +34,16 @@ public class EventBus
 
         var type = typeof(T);
         if (_subscribers.ContainsKey(type))
-        {
             _subscribers[type].Remove(callback);
-        }
     }
 
-    /// <summary>
-    /// Removes all subscriptions for event type T.
-    /// </summary>
     public static void UnsubscribeAll<T>()
     {
         var type = typeof(T);
         if (_subscribers.ContainsKey(type))
-        {
             _subscribers[type].Clear();
-        }
     }
 
-    /// <summary>
-    /// Publishes an event to all subscribed callbacks.
-    /// Handles exceptions gracefully to prevent cascading failures.
-    /// </summary>
     public static void Publish<T>(T evt)
     {
         var type = typeof(T);
@@ -75,7 +52,6 @@ public class EventBus
 
         try
         {
-            // Create a copy to avoid modification during iteration
             var callbacks = new List<Delegate>(_subscribers[type]);
             foreach (var callback in callbacks)
             {
@@ -85,19 +61,16 @@ public class EventBus
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"[EventBus] Error publishing {type.Name}: {ex.Message}\n{ex.StackTrace}");
+                    Debug.LogError($"[EventBus] {type.Name}: {ex.Message}");
                 }
             }
         }
         catch (Exception ex)
         {
-            Debug.LogError($"[EventBus] Critical error in Publish: {ex.Message}\n{ex.StackTrace}");
+            Debug.LogError($"[EventBus] Critical: {ex.Message}");
         }
     }
 
-    /// <summary>
-    /// Clears all subscriptions. Use with caution.
-    /// </summary>
     public static void Clear()
     {
         _subscribers.Clear();

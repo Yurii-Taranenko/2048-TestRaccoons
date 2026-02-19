@@ -1,21 +1,18 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// Manages UI window and HUD display based on game state.
-/// Caches window instances for rapid access.
-/// </summary>
 public class WindowManager : BaseManager
 {
     private WindowConfig _config;
     private Dictionary<Type, WindowBase> _windowCache;
     private Dictionary<GameState, WindowBase> _hudCache;
+    private Transform _windowsParent;
+    private Transform _hudsParent;
 
-    /// <summary>
-    /// Sets the configuration for this manager.
-    /// Must be called before Init().
-    /// </summary>
+    [SerializeField] private Transform windowsParent;
+    [SerializeField] private Transform hudsParent;
+
     public void SetConfig(WindowConfig config)
     {
         _config = config;
@@ -25,44 +22,88 @@ public class WindowManager : BaseManager
     {
         if (_config == null)
         {
-            Debug.LogError("[WindowManager] Config not assigned! GameBootstrap should call SetConfig()");
+            Debug.LogError("[WindowManager] Config not assigned");
             return;
         }
 
-        InitializeWindowCache();
-        InitializeHudCache();
+        _windowsParent = windowsParent;
+        _hudsParent = hudsParent;
+
+        if (_windowsParent == null || _hudsParent == null)
+        {
+            Debug.LogError("[WindowManager] Parents not assigned in Inspector");
+            return;
+        }
+
+        SpawnWindowsFromPrefabs();
+        SpawnHudsFromPrefabs();
         EventBus.Subscribe<GameStateChangedEvent>(UpdateHUD);
+
+        Debug.Log($"[WindowManager] Ready: {_windowCache.Count} windows, {_hudCache.Count} HUDs");
     }
 
-    private void InitializeWindowCache()
+    private void SpawnWindowsFromPrefabs()
     {
         _windowCache = new Dictionary<Type, WindowBase>();
-        if (_config?.windows == null)
+
+        if (_config?.windows == null || _config.windows.Count == 0)
         {
-            Debug.LogWarning("[WindowManager] Windows list is empty or config is null");
+            Debug.LogWarning("[WindowManager] Windows list empty");
             return;
         }
 
-        foreach (var window in _config.windows)
+        foreach (var windowPrefab in _config.windows)
         {
-            if (window != null)
-                _windowCache[window.GetType()] = window;
+            if (windowPrefab == null)
+                continue;
+
+            try
+            {
+                WindowBase spawnedWindow = Instantiate(windowPrefab, _windowsParent);
+                spawnedWindow.gameObject.name = windowPrefab.GetType().Name;
+                spawnedWindow.gameObject.SetActive(false);
+
+                var windowType = windowPrefab.GetType();
+                _windowCache[windowType] = spawnedWindow;
+
+                Debug.Log($"[WindowManager] Window spawned: {windowType.Name}");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[WindowManager] Spawn failed: {ex.Message}");
+            }
         }
     }
 
-    private void InitializeHudCache()
+    private void SpawnHudsFromPrefabs()
     {
         _hudCache = new Dictionary<GameState, WindowBase>();
-        if (_config?.hudMappings == null)
+
+        if (_config?.hudMappings == null || _config.hudMappings.Count == 0)
         {
-            Debug.LogWarning("[WindowManager] HUD mappings is empty or config is null");
+            Debug.LogWarning("[WindowManager] HUD mappings empty");
             return;
         }
 
         foreach (var mapping in _config.hudMappings)
         {
-            if (mapping?.hud != null)
-                _hudCache[mapping.state] = mapping.hud;
+            if (mapping?.hud == null)
+                continue;
+
+            try
+            {
+                WindowBase spawnedHud = Instantiate(mapping.hud, _hudsParent);
+                spawnedHud.gameObject.name = $"HUD_{mapping.state}";
+                spawnedHud.gameObject.SetActive(false);
+
+                _hudCache[mapping.state] = spawnedHud;
+
+                Debug.Log($"[WindowManager] HUD spawned: {mapping.state}");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[WindowManager] HUD spawn failed: {ex.Message}");
+            }
         }
     }
 
@@ -73,11 +114,13 @@ public class WindowManager : BaseManager
 
     public void UpdateHUD(GameStateChangedEvent evt)
     {
+        Debug.Log($"[WindowManager] Update HUD: {evt.GameState}");
         HideAllHud();
 
         if (_hudCache.TryGetValue(evt.GameState, out var hud))
         {
             hud.Show();
+            Debug.Log($"[WindowManager] HUD shown: {hud.gameObject.name}");
         }
     }
 
@@ -85,18 +128,25 @@ public class WindowManager : BaseManager
     {
         if (_hudCache.TryGetValue(state, out var hud))
         {
+            HideAllHud();
             hud.Show();
         }
     }
 
     public void Show<T>() where T : WindowBase
     {
+        Debug.Log($"[WindowManager] Show: {typeof(T).Name}");
         HideAllWindows();
 
         var windowType = typeof(T);
         if (_windowCache.TryGetValue(windowType, out var window))
         {
             window.Show();
+            Debug.Log($"[WindowManager] Window shown: {window.gameObject.name}");
+        }
+        else
+        {
+            Debug.LogError($"[WindowManager] Window not found: {windowType.Name}");
         }
     }
 
@@ -108,10 +158,7 @@ public class WindowManager : BaseManager
 
     private void HideAllWindows()
     {
-        if (_config?.windows == null)
-            return;
-
-        foreach (var window in _config.windows)
+        foreach (var window in _windowCache.Values)
         {
             if (window != null)
                 window.Hide();

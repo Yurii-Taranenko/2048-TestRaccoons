@@ -19,32 +19,17 @@ public static class ConfigManager
 
             if (config == null)
             {
-                Debug.LogError($"[ConfigManager] Config not found: {fullPath}. " +
-                    $"Make sure the file is located at: Assets/Resources/{fullPath}.asset");
+                Debug.LogError($"[ConfigManager] Not found: {fullPath}");
                 return null;
             }
 
-            Debug.Log($"[ConfigManager] Successfully loaded config: {configName}");
+            Debug.Log($"[ConfigManager] Loaded: {configName}");
             return config;
         }
         catch (System.Exception ex)
         {
-            Debug.LogError($"[ConfigManager] Error loading config {configName}: {ex.Message}");
+            Debug.LogError($"[ConfigManager] Load error: {ex.Message}");
             return null;
         }
-    }
-
-    /// <summary>
-    /// Loads configuration or creates a default instance if file not found.
-    /// </summary>
-    public static T LoadConfigOrDefault<T>(string configName) where T : ScriptableObject
-    {
-        T config = LoadConfig<T>(configName);
-        if (config == null)
-        {
-            Debug.LogWarning($"[ConfigManager] Creating default config for {configName}");
-            config = ScriptableObject.CreateInstance<T>();
-        }
-        return config;
     }
 }

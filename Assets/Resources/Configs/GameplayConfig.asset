@@ -14,5 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spawnProbability2: 0.75
   spawnProbability4: 0.25
-  minCollisionImpulse: 1
-  cubeSpawnForce: 10
+  minCollisionImpulse: 0.5
+  cubeSpawnForce: 100
+  collisionResetTime: 0.2
+  mergeAnimationDuration: 0.3
+  enableMergeFeedback: 1
