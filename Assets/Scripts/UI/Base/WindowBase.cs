@@ -1,14 +1,27 @@
 using UnityEngine;
 
-public abstract class WindowBase : MonoBehaviour, IWindow
+namespace Game.UI.Base
 {
-    public virtual void Show()
+    /// <summary>
+    /// Base class for all UI windows and HUDs.
+    /// Provides common show/hide functionality.
+    /// </summary>
+    public abstract class WindowBase : MonoBehaviour, IWindow
     {
-        gameObject.SetActive(true);
-    }
+        /// <summary>
+        /// Show this window by activating its GameObject.
+        /// </summary>
+        public virtual void Show()
+        {
+            gameObject.SetActive(true);
+        }
 
-    public virtual void Hide()
-    {
-        gameObject.SetActive(false);
+        /// <summary>
+        /// Hide this window by deactivating its GameObject.
+        /// </summary>
+        public virtual void Hide()
+        {
+            gameObject.SetActive(false);
+        }
     }
 }

@@ -1,79 +1,71 @@
-using System.Collections.Generic;
-using UnityEngine;
+using System;
+using Game.Core.Events;
+using Game.Core.Utils;
+using Game.Core.State;
+using Game.Core.Services;
+using Game.UI.Windows;
 
-public class GamePresenter : MonoBehaviour
+namespace Game.Game.Presenters
 {
-    private List<BaseManager> _managers = new List<BaseManager>();
-    private WindowManager _windowManager;
-    private GameStateManager _gameStateManager;
-    private SceneManagerCustom _sceneManager;
-    private CubeManager _cubeManager;
-    private GameModel _gameModel;
-
-    public void Init(List<BaseManager> managers, GameModel gameModel)
+    // MVP Presenter — bridges model, UI and game flow
+    public class GamePresenter : IDisposable
     {
-        _gameModel = gameModel;
-        CacheManagers(managers);
-        InitializeManagers();
-        InitializeModel();
-        PublishInitializationEvent();
-        SubscribeToEvents();
-        DontDestroyOnLoad(this);
-    }
+        private readonly IScoreService _scoreService;
+        private readonly IWindowService _windowService;
+        private readonly ISceneService _sceneService;
+        private readonly ICubeService _cubeService;
+        private readonly IGameStateService _gameStateService;
 
-    private void CacheManagers(List<BaseManager> managers)
-    {
-        foreach (var manager in managers)
+        public GamePresenter(
+            IScoreService scoreService,
+            IWindowService windowService,
+            ISceneService sceneService,
+            ICubeService cubeService,
+            IGameStateService gameStateService)
         {
-            _managers.Add(manager);
-            if (manager is WindowManager windowManager)
-                _windowManager = windowManager;
-            else if (manager is GameStateManager gameStateManager)
-                _gameStateManager = gameStateManager;
-            else if (manager is SceneManagerCustom sceneManager)
-                _sceneManager = sceneManager;
-            else if (manager is CubeManager cubeManager)
-                _cubeManager = cubeManager;
+            _scoreService = scoreService;
+            _windowService = windowService;
+            _sceneService = sceneService;
+            _cubeService = cubeService;
+            _gameStateService = gameStateService;
+
+            Initialize();
         }
-    }
 
-    private void InitializeManagers()
-    {
-        foreach (var manager in _managers)
-            manager.Init();
-    }
+        public void Initialize()
+        {
+            EventBus.Subscribe<GameOverEvent>(OnGameOver);
+            EventBus.Subscribe<OnRestartGameEvent>(OnRestart);
+        }
 
-    private void InitializeModel()
-    {
-        _gameModel?.Initialize();
-    }
+        private void OnGameOver(GameOverEvent evt)
+        {
+            if (_cubeService == null)
+                return;
 
-    private void PublishInitializationEvent()
-    {
-        EventBus.Publish(new OnManagersInitialized());
-    }
+            // Skip game over for the active (not yet launched) cube
+            var activeCube = _cubeService.ActiveCube;
+            if (activeCube != null && evt.CubeId == activeCube.Id)
+                return;
 
-    private void SubscribeToEvents()
-    {
-        EventBus.Subscribe<GameOverEvent>(OnGameOver);
-        EventBus.Subscribe<OnRestartGameEvent>(OnRestart);
-    }
+            _windowService?.Show<GameOverWindow>();
+            _gameStateService?.ChangeState(GameState.GameOver);
+        }
 
-    private void OnGameOver(GameOverEvent evt)
-    {
-        _windowManager?.Show<GameOverWindow>();
-    }
+        private void OnRestart(OnRestartGameEvent evt)
+        {
+            _scoreService?.ResetScore();
+            _cubeService?.ResetCubes();
+            _windowService?.HideAllWindows();
+            // Restore state — WindowService picks up GameStateChangedEvent and shows HUD
+            _gameStateService?.ChangeState(GameState.GameScene);
+            _sceneService?.RestartScene();
+        }
 
-    private void OnRestart(OnRestartGameEvent @event)
-    {
-        _gameModel?.ResetScore();
-        _sceneManager?.RestartScene();
-    }
-
-    private void OnDestroy()
-    {
-        EventBus.Unsubscribe<GameOverEvent>(OnGameOver);
-        EventBus.Unsubscribe<OnRestartGameEvent>(OnRestart);
-        _gameModel?.Dispose();
+        public void Dispose()
+        {
+            EventBus.Unsubscribe<GameOverEvent>(OnGameOver);
+            EventBus.Unsubscribe<OnRestartGameEvent>(OnRestart);
+        }
     }
 }

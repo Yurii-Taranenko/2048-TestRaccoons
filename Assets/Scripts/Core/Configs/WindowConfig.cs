@@ -1,20 +1,25 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Game.Core.State;
+using Game.UI.Base;
 
-/// <summary>
-/// Configuration for UI windows and HUD elements.
-/// Manages window instances and state-to-HUD mappings.
-/// </summary>
-[CreateAssetMenu(fileName = "WindowConfig", menuName = "Configs/WindowConfig")]
-public class WindowConfig : ScriptableObject
+namespace Game.Core.Config
 {
-    [System.Serializable]
-    public class HUDMapping
+    /// <summary>
+    /// Configuration for UI windows and HUD elements.
+    /// Manages window instances and state-to-HUD mappings.
+    /// </summary>
+    [CreateAssetMenu(fileName = "WindowConfig", menuName = "Configs/WindowConfig")]
+    public class WindowConfig : ScriptableObject
     {
-        public GameState state;
-        public WindowBase hud;
-    }
+        [System.Serializable]
+        public class HUDMapping
+        {
+            public GameState state;
+            public WindowBase hud;
+        }
 
-    [SerializeField] public List<WindowBase> windows = new();
-    [SerializeField] public List<HUDMapping> hudMappings = new();
+        [SerializeField] public List<WindowBase> windows = new();
+        [SerializeField] public List<HUDMapping> hudMappings = new();
+    }
 }

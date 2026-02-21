@@ -1,38 +1,52 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ObjectPool<T> where T : MonoBehaviour
+namespace Game.Core.Utils
 {
-    private readonly T _prefab;
-    private readonly Queue<T> _pool = new();
-    private readonly Transform _parent;
-
-    public ObjectPool(T prefab, int initialSize, Transform parent = null)
+    // Simple pool for reusing MonoBehaviour objects
+    public class ObjectPool<T> where T : MonoBehaviour
     {
-        _prefab = prefab;
-        _parent = parent;
-        for (int i = 0; i < initialSize; i++)
+        private readonly T _prefab;
+        private readonly Queue<T> _pool = new();
+        private readonly Transform _parent;
+
+        public ObjectPool(T prefab, int initialSize, Transform parent = null)
         {
-            var obj = Object.Instantiate(_prefab, _parent);
+            _prefab = prefab;
+            _parent = parent;
+            for (int i = 0; i < initialSize; i++)
+            {
+                var obj = Object.Instantiate(_prefab, _parent);
+                obj.gameObject.SetActive(false);
+                _pool.Enqueue(obj);
+            }
+        }
+
+        public T Get()
+        {
+            if (_pool.Count > 0)
+            {
+                var obj = _pool.Dequeue();
+                obj.gameObject.SetActive(true);
+                return obj;
+            }
+            return Object.Instantiate(_prefab, _parent);
+        }
+
+        public void Return(T obj)
+        {
             obj.gameObject.SetActive(false);
             _pool.Enqueue(obj);
         }
-    }
 
-    public T Get()
-    {
-        if (_pool.Count > 0)
+        public void Reset()
         {
-            var obj = _pool.Dequeue();
-            obj.gameObject.SetActive(true);
-            return obj;
+            while (_pool.Count > 0)
+            {
+                var obj = _pool.Dequeue();
+                Object.Destroy(obj.gameObject);
+            }
+            _pool.Clear();
         }
-        return Object.Instantiate(_prefab, _parent);
-    }
-
-    public void Return(T obj)
-    {
-        obj.gameObject.SetActive(false);
-        _pool.Enqueue(obj);
     }
 }

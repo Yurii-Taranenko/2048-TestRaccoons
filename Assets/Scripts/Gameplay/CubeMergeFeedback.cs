@@ -1,63 +1,89 @@
 using UnityEngine;
+using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
+using Game.Core.Events;
+using Game.Core.Utils;
 
-/// <summary>
-/// Manages visual and audio feedback for cube merges.
-/// Decouples presentation logic from merge system.
-/// </summary>
-public class CubeMergeFeedback : MonoBehaviour
+namespace Game.Gameplay.Merge
 {
-    [SerializeField] private ParticleSystem mergePrefab;
-    [SerializeField] private AudioClip mergeSound;
-    [SerializeField] private float feedbackDuration = 0.5f;
-
-    private AudioSource _audioSource;
-
-    private void Awake()
+    public class CubeMergeFeedback : MonoBehaviour
     {
-        if (mergeSound != null)
+        [SerializeField] private ParticleSystem _mergePrefab;
+        [SerializeField] private int _poolSize = 5;
+        [SerializeField] private AudioSource _mergeSource;
+        [SerializeField] private AudioSource _launchSound;
+
+        private static readonly Vector3 ParticleOffset = Vector3.up;
+        private readonly Queue<ParticleSystem> _particlePool = new();
+
+        private void Awake()
         {
-            _audioSource = gameObject.AddComponent<AudioSource>();
-            _audioSource.clip = mergeSound;
+            if (_mergePrefab == null) return;
+
+            for (int i = 0; i < _poolSize; i++)
+            {
+                var ps = Instantiate(_mergePrefab, transform);
+                ps.gameObject.SetActive(false);
+                _particlePool.Enqueue(ps);
+            }
         }
-    }
 
-    private void OnEnable()
-    {
-        EventBus.Subscribe<CubeMergedEvent>(OnCubeMerged);
-    }
+        private void OnEnable()
+        {
+            EventBus.Subscribe<CubeLaunchEvent>(OnCubeLaunch);
+            EventBus.Subscribe<CubeMergedEvent>(OnCubeMerged);
+        }
 
-    private void OnDisable()
-    {
-        EventBus.Unsubscribe<CubeMergedEvent>(OnCubeMerged);
-    }
+        private void OnDisable()
+        {
+            EventBus.Unsubscribe<CubeLaunchEvent>(OnCubeLaunch);
+            EventBus.Unsubscribe<CubeMergedEvent>(OnCubeMerged);
+        }
 
-    private void OnCubeMerged(CubeMergedEvent evt)
-    {
-        PlayMergeFeedback(evt.MergePosition, evt.ResultingValue);
-    }
+        private void OnCubeLaunch(CubeLaunchEvent evt)
+        {
+            PlayLaunchSound();
+        }
 
-    private void PlayMergeFeedback(Vector3 position, int resultValue)
-    {
-        PlayParticleEffect(position);
-        PlayMergeSound();
-        
-        Debug.Log($"[CubeMergeFeedback] Merge feedback at {position} for value {resultValue}");
-    }
+        private void OnCubeMerged(CubeMergedEvent evt)
+        {
+            PlayParticleEffect(evt.MergePosition);
+            PlayMergeSound();
+        }
 
-    private void PlayParticleEffect(Vector3 position)
-    {
-        if (mergePrefab == null)
-            return;
+        private void PlayParticleEffect(Vector3 position)
+        {
+            if (_particlePool.Count == 0) return;
 
-        var particles = Instantiate(mergePrefab, position, Quaternion.identity);
-        Destroy(particles.gameObject, feedbackDuration);
-    }
+            var ps = _particlePool.Dequeue();
+            ps.gameObject.SetActive(true);
+            ps.transform.position = position + ParticleOffset;
+            ps.Play();
 
-    private void PlayMergeSound()
-    {
-        if (_audioSource == null)
-            return;
+            float duration = ps.main.duration + ps.main.startLifetime.constantMax;
+            ReturnToPoolDelayed(ps, duration).Forget();
+        }
 
-        _audioSource.PlayOneShot(_audioSource.clip);
+        private async UniTask ReturnToPoolDelayed(ParticleSystem ps, float delay)
+        {
+            await UniTask.Delay((int)(delay * 1000), cancellationToken: destroyCancellationToken);
+            if (ps == null) return;
+
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            ps.gameObject.SetActive(false);
+            _particlePool.Enqueue(ps);
+        }
+
+        private void PlayMergeSound()
+        {
+            if (_mergeSource != null && _mergeSource.clip != null)
+                _mergeSource.PlayOneShot(_mergeSource.clip);
+        }
+
+        private void PlayLaunchSound()
+        {
+            if (_launchSound != null && _launchSound.clip != null)
+                _launchSound.PlayOneShot(_launchSound.clip);
+        }
     }
 }

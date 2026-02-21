@@ -2,56 +2,52 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class EventBus
+namespace Game.Core.Utils
 {
-    private static readonly Dictionary<Type, List<Delegate>> _subscribers = new();
-
-    public static void Subscribe<T>(Action<T> callback)
+    // Global event bus using struct events
+    public static class EventBus
     {
-        if (callback == null)
+        private static readonly Dictionary<Type, List<Delegate>> _subscribers = new();
+
+        public static void Subscribe<T>(Action<T> callback) where T : struct
         {
-            Debug.LogWarning($"[EventBus] Null callback for {typeof(T).Name}");
-            return;
+            if (callback == null)
+                return;
+
+            var type = typeof(T);
+            if (!_subscribers.ContainsKey(type))
+                _subscribers[type] = new List<Delegate>();
+
+            if (_subscribers[type].Contains(callback))
+                return;
+
+            _subscribers[type].Add(callback);
         }
 
-        var type = typeof(T);
-        if (!_subscribers.ContainsKey(type))
-            _subscribers[type] = new List<Delegate>();
-
-        if (_subscribers[type].Contains(callback))
+        public static void Unsubscribe<T>(Action<T> callback) where T : struct
         {
-            Debug.LogWarning($"[EventBus] Already subscribed to {type.Name}");
-            return;
+            if (callback == null)
+                return;
+
+            var type = typeof(T);
+            if (_subscribers.ContainsKey(type))
+                _subscribers[type].Remove(callback);
         }
 
-        _subscribers[type].Add(callback);
-    }
-
-    public static void Unsubscribe<T>(Action<T> callback)
-    {
-        if (callback == null)
-            return;
-
-        var type = typeof(T);
-        if (_subscribers.ContainsKey(type))
-            _subscribers[type].Remove(callback);
-    }
-
-    public static void UnsubscribeAll<T>()
-    {
-        var type = typeof(T);
-        if (_subscribers.ContainsKey(type))
-            _subscribers[type].Clear();
-    }
-
-    public static void Publish<T>(T evt)
-    {
-        var type = typeof(T);
-        if (!_subscribers.ContainsKey(type))
-            return;
-
-        try
+        public static void UnsubscribeAll<T>() where T : struct
         {
+            var type = typeof(T);
+            if (_subscribers.ContainsKey(type))
+                _subscribers[type].Clear();
+        }
+
+        public static void Publish<T>(T evt) where T : struct
+        {
+            var type = typeof(T);
+            if (!_subscribers.ContainsKey(type))
+                return;
+
+            // Copy to protect against modification during iteration
             var callbacks = new List<Delegate>(_subscribers[type]);
             foreach (var callback in callbacks)
             {
@@ -61,18 +57,14 @@ public class EventBus
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"[EventBus] {type.Name}: {ex.Message}");
+                    Debug.LogError($"[EventBus] Error in {type.Name} handler: {ex.Message}");
                 }
             }
         }
-        catch (Exception ex)
-        {
-            Debug.LogError($"[EventBus] Critical: {ex.Message}");
-        }
-    }
 
-    public static void Clear()
-    {
-        _subscribers.Clear();
+        public static void Clear()
+        {
+            _subscribers.Clear();
+        }
     }
 }

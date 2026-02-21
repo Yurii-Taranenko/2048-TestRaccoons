@@ -1,11 +1,9 @@
-/// <summary>
-/// Enumeration of possible game states.
-/// Used for state machine and scene/HUD management.
-/// </summary>
-public enum GameState
+namespace Game.Core.State
 {
-    /// <summary>Initial startup and setup state</summary>
-    Bootstrap,
-    /// <summary>Main gameplay state</summary>
-    GameScene
+    public enum GameState
+    {
+        Bootstrap,
+        GameScene,
+        GameOver
+    }
 }

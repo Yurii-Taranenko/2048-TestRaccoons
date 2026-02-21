@@ -1,38 +1,39 @@
 using UnityEngine;
 using UnityEngine.UI;
+using Game.Core.Events;
+using Game.Core.Utils;
+using Game.UI.Base;
 
-/// <summary>
-/// Handles game over UI window and restart functionality.
-/// Manages button listeners without creating lambda memory leaks.
-/// </summary>
-public class GameOverWindow : WindowBase
+namespace Game.UI.Windows
 {
-    [SerializeField] private Button restartButton;
-    private bool _isInitialized;
-
-    private void OnEnable()
+    public class GameOverWindow : WindowBase
     {
-        if (!_isInitialized)
+        [SerializeField] private Button restartButton;
+        private bool _isInitialized;
+
+        private void OnEnable()
         {
-            _isInitialized = true;
-            restartButton.onClick.AddListener(OnRestartClicked);
+            if (!_isInitialized)
+            {
+                _isInitialized = true;
+                if (restartButton != null)
+                    restartButton.onClick.AddListener(OnRestartClicked);
+            }
         }
-    }
 
-    private void OnDisable()
-    {
-        if (_isInitialized)
+        private void OnDisable()
         {
-            restartButton.onClick.RemoveListener(OnRestartClicked);
+            if (_isInitialized)
+            {
+                _isInitialized = false;
+                if (restartButton != null)
+                    restartButton.onClick.RemoveListener(OnRestartClicked);
+            }
         }
-    }
 
-    /// <summary>
-    /// Publishes restart event when button is clicked.
-    /// Uses named method reference to avoid lambda memory leaks.
-    /// </summary>
-    private void OnRestartClicked()
-    {
-        EventBus.Publish(new OnRestartGameEvent());
+        private void OnRestartClicked()
+        {
+            EventBus.Publish(new OnRestartGameEvent());
+        }
     }
 }

@@ -1,35 +1,67 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
+using Cysharp.Threading.Tasks;
+using Game.Core.Events;
+using Game.Core.Utils;
+using Game.Gameplay.Boosters;
+using Game.UI.Base;
 
-/// <summary>
-/// Displays the current game score in the HUD.
-/// Listens to score change events from the Model.
-/// </summary>
-public class GameHUD : WindowBase
+namespace Game.UI.HUD
 {
-    [SerializeField] private TextMeshProUGUI _scoreText;
-
-    private void OnEnable()
+    public class GameHUD : WindowBase
     {
-        EventBus.Subscribe<ScoreChangedEvent>(OnScoreChanged);
-    }
+        [SerializeField] private TextMeshProUGUI _scoreText;
+        [SerializeField] private Button _autoMergeButton;
 
-    private void OnDisable()
-    {
-        EventBus.Unsubscribe<ScoreChangedEvent>(OnScoreChanged);
-    }
+        private AutoMergeBooster _autoMergeBooster;
 
-    /// <summary>
-    /// Updates the score display when score changes.
-    /// </summary>
-    private void OnScoreChanged(ScoreChangedEvent evt)
-    {
-        SetScore(evt.Score);
-    }
+        // Injected by SceneHudConnector when gameplay scene loads
+        public void SetAutoMergeBooster(AutoMergeBooster booster)
+        {
+            _autoMergeBooster = booster;
+            if (_autoMergeButton != null)
+                _autoMergeButton.interactable = booster != null;
+        }
 
-    private void SetScore(int value)
-    {
-        if (_scoreText != null)
-            _scoreText.text = $"Score: {value}";
+        private void OnEnable()
+        {
+            SetScore(0);
+            EventBus.Subscribe<ScoreChangedEvent>(OnScoreChanged);
+
+            if (_autoMergeButton != null)
+                _autoMergeButton.onClick.AddListener(OnAutoMergeClicked);
+        }
+
+        private void OnDisable()
+        {
+            EventBus.Unsubscribe<ScoreChangedEvent>(OnScoreChanged);
+
+            if (_autoMergeButton != null)
+                _autoMergeButton.onClick.RemoveListener(OnAutoMergeClicked);
+        }
+
+        private void OnScoreChanged(ScoreChangedEvent evt) => SetScore(evt.Score);
+
+        private void SetScore(int value)
+        {
+            if (_scoreText != null)
+                _scoreText.text = $"Score: {value}";
+        }
+
+        private void OnAutoMergeClicked()
+        {
+            if (_autoMergeBooster == null || _autoMergeBooster.IsRunning) return;
+            HandleAutoMergeAsync().Forget();
+        }
+
+        // Button blocks ? awaits full process ? unblocks. No callbacks.
+        private async UniTaskVoid HandleAutoMergeAsync()
+        {
+            _autoMergeButton.interactable = false;
+            await _autoMergeBooster.RunAsync();
+            if (_autoMergeButton != null)
+                _autoMergeButton.interactable = true;
+        }
     }
 }

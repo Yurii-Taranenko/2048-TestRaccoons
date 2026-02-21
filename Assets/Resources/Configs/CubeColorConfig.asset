@@ -16,22 +16,22 @@ MonoBehaviour:
   - value: 2
     color: {r: 1, g: 0, b: 0, a: 1}
   - value: 4
-    color: {r: 0.7, g: 0.7, b: 0.7, a: 1}
+    color: {r: 0.27206296, g: 0.8584906, b: 0, a: 1}
   - value: 8
-    color: {r: 1, g: 0.8, b: 0.6, a: 1}
+    color: {r: 1, g: 0.94247794, b: 0, a: 1}
   - value: 16
-    color: {r: 1, g: 0.6, b: 0.4, a: 1}
+    color: {r: 0.25943398, g: 0.40458888, b: 1, a: 1}
   - value: 32
-    color: {r: 1, g: 0.4, b: 0.2, a: 1}
+    color: {r: 1, g: 0.41037738, b: 0.85455626, a: 1}
   - value: 64
-    color: {r: 1, g: 0.2, b: 0, a: 1}
+    color: {r: 0.4437215, g: 0.07075471, b: 1, a: 1}
   - value: 128
-    color: {r: 1, g: 0, b: 0, a: 1}
+    color: {r: 1, g: 0.37441987, b: 0, a: 1}
   - value: 256
-    color: {r: 1, g: 0.6, b: 0, a: 1}
+    color: {r: 0, g: 1, b: 0.9542887, a: 1}
   - value: 512
-    color: {r: 1, g: 0.8, b: 0, a: 1}
+    color: {r: 0.6320754, g: 0.018565783, b: 0, a: 1}
   - value: 1024
-    color: {r: 0, g: 0.8, b: 1, a: 1}
+    color: {r: 0.51160496, g: 1, b: 0.4009434, a: 1}
   - value: 2048
-    color: {r: 0, g: 0.6, b: 1, a: 1}
+    color: {r: 0, g: 0.00046602284, b: 0.8396226, a: 1}

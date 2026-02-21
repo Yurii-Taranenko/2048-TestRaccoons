@@ -1,5 +1,8 @@
-public interface IWindow
+namespace Game.UI.Base
 {
-    void Show();
-    void Hide();
+    public interface IWindow
+    {
+        void Show();
+        void Hide();
+    }
 }

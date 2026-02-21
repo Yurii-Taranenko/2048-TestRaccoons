@@ -1,32 +1,25 @@
 using UnityEngine;
+using Game.Core.Events;
+using Game.Core.Utils;
 
-/// <summary>
-/// Initializes gameplay systems when the gameplay scene is loaded.
-/// Connects managers from Bootstrap scene with gameplay-specific components.
-/// 
-/// This script should be placed on any GameObject in the gameplay scene.
-/// It publishes GameplaySceneLoadedEvent so managers can receive runtime dependencies.
-/// </summary>
-public class GameplayInitializer : MonoBehaviour
+namespace Game.Gameplay
 {
-    [SerializeField] private Transform spawnPoint;
-    [SerializeField] private CubeInputHandler inputHandler;
-
-    private void Start()
+    public class GameplayInitializer : MonoBehaviour
     {
-        if (spawnPoint == null || inputHandler == null)
+        [SerializeField] private Transform spawnPoint;
+
+        private void Start()
         {
-            Debug.LogError("[GameplayInitializer] Missing references (spawnPoint or inputHandler)!");
-            return;
+            if (spawnPoint == null)
+            {
+                Debug.LogError("[GameplayInitializer] Missing spawn point!");
+                return;
+            }
+
+            EventBus.Publish(new GameplaySceneLoadedEvent
+            {
+                SpawnPoint = spawnPoint
+            });
         }
-
-        // Publish event that gameplay scene is loaded with its dependencies
-        EventBus.Publish(new GameplaySceneLoadedEvent
-        {
-            SpawnPoint = spawnPoint,
-            InputHandler = inputHandler
-        });
-
-        Debug.Log("[GameplayInitializer] Gameplay scene initialized and event published");
     }
 }

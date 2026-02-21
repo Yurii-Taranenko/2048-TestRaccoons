@@ -1,43 +1,56 @@
 using UnityEngine;
 
-/// <summary>
-/// Configuration for 2048 game mechanics.
-/// Defines cube spawn probabilities and physics parameters.
-/// </summary>
-[CreateAssetMenu(fileName = "GameplayConfig", menuName = "Configs/GameplayConfig")]
-public class GameplayConfig : ScriptableObject
+namespace Game.Core.Config
 {
-    [Header("Cube Spawn")]
-    [Range(0f, 1f)]
-    [SerializeField] public float spawnProbability2 = 0.75f;
-    [Range(0f, 1f)]
-    [SerializeField] public float spawnProbability4 = 0.25f;
-
-    [Header("Physics")]
-    [SerializeField] public float minCollisionImpulse = 1f;
-    [SerializeField] public float cubeSpawnForce = 10f;
-    [SerializeField] public float collisionResetTime = 0.2f;
-
-    [Header("Visuals")]
-    [SerializeField] public float mergeAnimationDuration = 0.3f;
-    [SerializeField] public bool enableMergeFeedback = true;
-
-    private void OnValidate()
+    /// <summary>
+    /// Configuration for 2048 game mechanics.
+    /// Defines cube spawn probabilities and physics parameters.
+    /// </summary>
+    [CreateAssetMenu(fileName = "GameplayConfig", menuName = "Configs/GameplayConfig")]
+    public class GameplayConfig : ScriptableObject
     {
-        float totalProb = spawnProbability2 + spawnProbability4;
-        if (Mathf.Abs(totalProb - 1f) > 0.01f)
-            Debug.LogWarning($"[GameplayConfig] Probabilities sum: {totalProb}, expected 1.0");
+        [Header("Cube Spawn")]
+        [Range(0f, 1f)]
+        public float spawnProbability2 = 0.75f;
+        [Range(0f, 1f)]
+        public float spawnProbability4 = 0.25f;
 
-        if (minCollisionImpulse < 0)
-        {
-            Debug.LogWarning("[GameplayConfig] minCollisionImpulse must be >= 0");
-            minCollisionImpulse = 0;
-        }
+        [Header("Physics")]
+        public float minCollisionImpulse = 1f;
+        public float cubeSpawnForce = 10f;
+        public float collisionResetTime = 0.2f;
 
-        if (collisionResetTime <= 0)
+        [Header("Visuals")]
+        public float mergeAnimationDuration = 0.3f;
+        public bool enableMergeFeedback = true;
+
+        [Header("Auto-Merge Booster")]
+        public float autoMergeAnimationDuration = 1.5f;
+        public float autoMergeRiseHeight = 3f;
+
+        private void OnValidate()
         {
-            Debug.LogWarning("[GameplayConfig] collisionResetTime must be > 0");
-            collisionResetTime = 0.1f;
+            float totalProb = spawnProbability2 + spawnProbability4;
+            if (Mathf.Abs(totalProb - 1f) > 0.01f)
+                Debug.LogWarning($"[GameplayConfig] Probabilities sum: {totalProb}, expected 1.0");
+
+            if (minCollisionImpulse < 0)
+            {
+                Debug.LogWarning("[GameplayConfig] minCollisionImpulse must be >= 0");
+                minCollisionImpulse = 0;
+            }
+
+            if (collisionResetTime <= 0)
+            {
+                Debug.LogWarning("[GameplayConfig] collisionResetTime must be > 0");
+                collisionResetTime = 0.1f;
+            }
+
+            if (autoMergeAnimationDuration <= 0)
+            {
+                Debug.LogWarning("[GameplayConfig] autoMergeAnimationDuration must be > 0");
+                autoMergeAnimationDuration = 1.5f;
+            }
         }
     }
 }

@@ -1,68 +1,46 @@
 ﻿using UnityEngine;
+using Game.Core.Events;
+using Game.Core.Utils;
+using Game.Core.Services;
 
-/// <summary>
-/// Model layer responsible for managing game data and score.
-/// </summary>
-public class GameModel : IGameModel
+namespace Game.Game.Models
 {
-    private int _currentScore;
-    public int CurrentScore => _currentScore;
-
-    /// <summary>
-    /// Initializes the model state without publishing events.
-    /// </summary>
-    public void Initialize()
+    // MVP Model — stores and updates game score
+    public class GameModel : IScoreService
     {
-        _currentScore = 0;
-        Debug.Log("[GameModel] Initialized with score: 0");
-        SubscribeToGameEvents();
-    }
+        private int _currentScore;
 
-    /// <summary>
-    /// Subscribes to gameplay events that affect score.
-    /// </summary>
-    private void SubscribeToGameEvents()
-    {
-        EventBus.Subscribe<CubeMergedEvent>(OnCubeMerged);
-    }
+        public int CurrentScore => _currentScore;
 
-    /// <summary>
-    /// Handles cube merge events and updates score.
-    /// </summary>
-    private void OnCubeMerged(CubeMergedEvent evt)
-    {
-        AddScore(evt.ScoreGained);
-    }
-
-    /// <summary>
-    /// Adds points to the current score and notifies listeners.
-    /// </summary>
-    public void AddScore(int points)
-    {
-        if (points < 0)
+        public void Initialize()
         {
-            Debug.LogWarning($"[GameModel] Attempt to add negative score: {points}");
-            return;
+            _currentScore = 0;
+            EventBus.Subscribe<CubeMergedEvent>(OnCubeMerged);
         }
 
-        _currentScore += points;
-        EventBus.Publish(new ScoreChangedEvent { Score = _currentScore });
-    }
+        private void OnCubeMerged(CubeMergedEvent evt)
+        {
+            AddScore(evt.ScoreGained);
+        }
 
-    /// <summary>
-    /// Resets the score to zero and notifies listeners.
-    /// </summary>
-    public void ResetScore()
-    {
-        _currentScore = 0;
-        EventBus.Publish(new ScoreChangedEvent { Score = _currentScore });
-    }
+        public void AddScore(int points)
+        {
+            if (points < 0)
+                return;
 
-    /// <summary>
-    /// Cleanup on destruction.
-    /// </summary>
-    public void Dispose()
-    {
-        EventBus.Unsubscribe<CubeMergedEvent>(OnCubeMerged);
+            _currentScore += points;
+            EventBus.Publish(new ScoreChangedEvent { Score = _currentScore });
+        }
+
+        public void ResetScore()
+        {
+            _currentScore = 0;
+            EventBus.Publish(new ScoreChangedEvent { Score = _currentScore });
+        }
+
+        public void Dispose()
+        {
+            EventBus.Unsubscribe<CubeMergedEvent>(OnCubeMerged);
+        }
     }
 }
