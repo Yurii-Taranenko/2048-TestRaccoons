@@ -50,11 +50,11 @@ namespace Game.Gameplay.Input
             if (!_isDragging || _activeCube == null) return;
 
             var cam = Camera.main;
-            var screenPos = new Vector3(evt.TouchPosition.x, evt.TouchPosition.y,
-                cam.transform.position.z - _cubeStartPosition.z);
+            float distanceToCamera = Mathf.Abs(cam.transform.position.z - _cubeStartPosition.z);
+            var screenPos = new Vector3(evt.TouchPosition.x, evt.TouchPosition.y, distanceToCamera);
             var worldPos = cam.ScreenToWorldPoint(screenPos);
 
-            float clampedX = Mathf.Clamp(-worldPos.x, -MAX_HORIZONTAL_POSITION, MAX_HORIZONTAL_POSITION);
+            float clampedX = Mathf.Clamp(worldPos.x, -MAX_HORIZONTAL_POSITION, MAX_HORIZONTAL_POSITION);
             var newPos = _cubeStartPosition;
             newPos.x = clampedX;
             _activeCube.transform.position = newPos;

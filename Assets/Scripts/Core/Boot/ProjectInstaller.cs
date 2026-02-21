@@ -24,6 +24,9 @@ namespace Game.Core.Boot
 
         public override void InstallBindings()
         {
+            QualitySettings.vSyncCount = 0;
+            Application.targetFrameRate = 60;
+
             BindConfigs();
             BindGlobalServices();
             BindModels();
